@@ -1,6 +1,6 @@
 # Token types
 # EOF stands for (end-of-file) => nothing more to analyse
-INTEGER, PLUS, MINUS, EOF = 'INTEGER', 'PLUS', 'MINUS', 'EOF'
+INTEGER, PLUS, MINUS, EOF, TIMES = 'INTEGER', 'PLUS', 'MINUS', 'EOF', 'TIMES'
 
 class Token(object):
     def __init__(self, type, value):
@@ -71,6 +71,9 @@ class Interpreter(object):
             if self.current_char == '-':
                 self.advance()
                 return Token(MINUS, '-')
+            if self.current_char == '*':
+                self.advance()
+                return Token(TIMES, '*')
             
             self.error()
         return Token(EOF, None)
@@ -95,8 +98,10 @@ class Interpreter(object):
         op = self.current_token
         if op.type == PLUS:
             self.eat(PLUS)
-        else:
+        elif op.type == MINUS:
             self.eat(MINUS)
+        elif op.type == TIMES:
+            self.eat(TIMES)
 
         right = self.current_token
         self.eat(INTEGER)
@@ -109,8 +114,10 @@ class Interpreter(object):
         # effectively interpreting client input
         if op.type == PLUS:
             result = left.value + right.value
-        else:
+        elif op.type == MINUS:
             result = left.value - right.value
+        elif op.type == TIMES:
+            result = left.value * right.value
         return result
 
 
