@@ -1,6 +1,6 @@
 # Token types
 # EOF stands for (end-of-file) => nothing more to analyse
-INTEGER, PLUS, EOF = 'INTEGER', 'PLUS', 'EOF'
+INTEGER, PLUS, MINUS, EOF = 'INTEGER', 'PLUS', 'MINUS', 'EOF'
 
 class Token(object):
     def __init__(self, type, value):
@@ -68,6 +68,9 @@ class Interpreter(object):
             if self.current_char == '+':
                 self.advance()
                 return Token(PLUS, '+')
+            if self.current_char == '-':
+                self.advance()
+                return Token(MINUS, '-')
             
             self.error()
         return Token(EOF, None)
@@ -83,22 +86,18 @@ class Interpreter(object):
             self.error()
 
     def expr(self):
-        """
-        The way to it works right now it expects:
-        expr -> INTEGER PLUS INTEGER
-        """
         # set current token to the first token taken from the input
         self.current_token = self.get_next_token()
 
-        # we expect the current token to be a single-digit integer
         left = self.current_token
         self.eat(INTEGER)
 
-        # we expect the current token to be a '+' token
         op = self.current_token
-        self.eat(PLUS)
+        if op.type == PLUS:
+            self.eat(PLUS)
+        else:
+            self.eat(MINUS)
 
-        # we expect the current token to be a single-digit integer
         right = self.current_token
         self.eat(INTEGER)
         # after the above call the self.current_token is set to
@@ -108,7 +107,10 @@ class Interpreter(object):
         # has been successfully found and the method can just
         # return the result of adding two integers, thus
         # effectively interpreting client input
-        result = left.value + right.value
+        if op.type == PLUS:
+            result = left.value + right.value
+        else:
+            result = left.value - right.value
         return result
 
 
