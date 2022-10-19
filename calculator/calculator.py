@@ -90,41 +90,33 @@ class Interpreter(object):
             self.current_token = self.get_next_token()
         else:
             self.error()
+    
+    def term(self):
+        #Return an INTEGER token VALUE
+        token = self.current_token
+        self.eat(INTEGER)
+        return token.value
 
     def expr(self):
         # set current token to the first token taken from the input
         self.current_token = self.get_next_token()
 
-        left = self.current_token
-        self.eat(INTEGER)
+        result = self.term()
+        while self.current_token.type in (PLUS, MINUS, TIMES, DIVIDE):
+            token = self.current_token
+            if token.type == PLUS:
+                self.eat(PLUS)
+                result = result + self.term()
+            elif token.type == MINUS:
+                self.eat(MINUS)
+                result = result - self.term()
+            elif token.type == TIMES:
+                self.eat(TIMES)
+                result = result * self.term()
+            elif token.type == DIVIDE:
+                self.eat(DIVIDE)
+                result = result / self.term()
 
-        op = self.current_token
-        if op.type == PLUS:
-            self.eat(PLUS)
-        elif op.type == MINUS:
-            self.eat(MINUS)
-        elif op.type == TIMES:
-            self.eat(TIMES)
-        elif op.type == DIVIDE:
-            self.eat(DIVIDE)
-
-        right = self.current_token
-        self.eat(INTEGER)
-        # after the above call the self.current_token is set to
-        # EOF token
-
-        # at this point INTEGER PLUS INTEGER sequence of tokens
-        # has been successfully found and the method can just
-        # return the result of adding two integers, thus
-        # effectively interpreting client input
-        if op.type == PLUS:
-            result = left.value + right.value
-        elif op.type == MINUS:
-            result = left.value - right.value
-        elif op.type == TIMES:
-            result = left.value * right.value
-        elif op.type == DIVIDE:
-            result = left.value / right.value
         return result
 
 
