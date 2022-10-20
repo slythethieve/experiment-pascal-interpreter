@@ -1,6 +1,8 @@
 # Token types
 # EOF stands for (end-of-file) => nothing more to analyse
-INTEGER, PLUS, MINUS, EOF, TIMES, DIVIDE = 'INTEGER', 'PLUS', 'MINUS', 'EOF', 'TIMES', 'DIVIDE'
+INTEGER, PLUS, MINUS, EOF, TIMES, DIVIDE, LPAREN, RPAREN = (
+'INTEGER', 'PLUS', 'MINUS', 'EOF', 'TIMES', 'DIVIDE', '(', ')'
+)
 
 class Token(object):
     def __init__(self, type, value):
@@ -71,6 +73,12 @@ class Lexer(object):
             if self.current_char == '/':
                 self.advance()
                 return Token(DIVIDE, '/')
+            if self.current_char == '(':
+                self.advance()
+                return Token(LPAREN, '(')
+            if self.current_char == ')':
+                self.advance()
+                return Token(RPAREN, ')')
             
             self.error()
         return Token(EOF, None)
@@ -98,11 +106,18 @@ class Interpreter(object):
     def factor(self):
         # factor: INTEGER
         token = self.current_token
-        self.eat(INTEGER)
-        return token.value
+
+        if token.type == INTEGER:
+            self.eat(INTEGER)
+            return token.value
+        elif token.type == LPAREN:
+            self.eat(LPAREN)
+            result = self.expr()
+            self.eat(RPAREN)
+            return result
     
     def term(self):
-        # term: factor ((TIMES | DIVIDE) factor)
+        # term: factor ((TIMES | DIVIDE) factor)*
         result = self.factor()
 
         while self.current_token.type in (TIMES, DIVIDE):
@@ -117,6 +132,7 @@ class Interpreter(object):
         return result
 
     def expr(self):
+        # expr: term ((PLUS | MINUS) term)*
         result = self.term()
         while self.current_token.type in (PLUS, MINUS):
             token = self.current_token
