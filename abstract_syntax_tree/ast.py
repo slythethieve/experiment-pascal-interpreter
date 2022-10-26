@@ -113,6 +113,13 @@ class Num(AST):
         self.token = token
         self.value = token.value
 
+# Anoher class for handling Unary operators
+class UnaryOp(AST):
+    # It works like this, but I still do not get why it's expr and not factor.
+    def __init__(self, op, expr):
+        self.token = self.op = op
+        self.expr = expr
+
 class Parser(object):
     def __init__(self, lexer):
         self.lexer = lexer
@@ -129,9 +136,16 @@ class Parser(object):
             self.error()
     
     def factor(self):
-        """factor : INTEGER | LPAREN expr RPAREN"""
+        """factor : (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN"""
         token = self.current_token
-        if token.type == INTEGER:
+        if token.type == PLUS:
+            self.eat(PLUS)
+            node = UnaryOp(token, self.factor())
+            return node
+        elif token.type == MINUS:
+            self.eat(MINUS)
+            node = UnaryOp(token, self.factor())
+        elif token.type == INTEGER:
             self.eat(INTEGER)
             return Num(token)
         elif token.type == LPAREN:
@@ -159,7 +173,7 @@ class Parser(object):
         """
         expr   : term ((PLUS | MINUS) term)*
         term   : factor ((MUL | DIV) factor)*
-        factor : INTEGER | LPAREN expr RPAREN
+        factor : (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN
         """
         node = self.term()
 
@@ -175,9 +189,13 @@ class Parser(object):
         return node
 
     def parse(self):
-        return self.expr()
+        node = self.expr()
+        if self.current_token.type != EOF:
+            self.error()
+        return node
 
 
+# INTERPRETER ########################################################################
 
 class NodeVisitor(object):
     def visit(self, node):
@@ -206,19 +224,25 @@ class Interpreter(NodeVisitor):
     def visit_Num(self, node):
         return node.value
 
+    def visit_UnaryOp(self, node):
+        op = node.op.type
+        if op == PLUS:
+            return +self.visit(node.expr)
+        elif op == MINUS:
+            return -self.visit(node.expr)
+
 
     def interpret(self):
         tree = self.parser.parse()
+        if tree is None:
+            return ''
         return self.visit(tree)
 
 
 def main():
     while True:
         try:
-            try:
-                text = input('Simple interpreter> ')
-            except NameError:  # Python3
-                text = input('Simple interpreter> ')
+            text = input('Simple interpreter> ')  
         except EOFError:
             break
         if not text:
